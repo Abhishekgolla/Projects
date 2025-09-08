@@ -1,0 +1,190 @@
+# === Healthcare Appointment No-Show Prediction: full runnable script ===
+# Run in Jupyter or as .py. Requires: pandas, numpy, scikit-learn, matplotlib, joblib
+# pip install pandas numpy scikit-learn matplotlib joblib
+
+import os
+import numpy as np
+import pandas as pd
+from datetime import datetime, timedelta
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, roc_curve
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+import matplotlib.pyplot as plt
+import joblib
+import random
+
+# 1) Create sample dataset (so script is end-to-end)
+def make_sample_appointments(n=2000, seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    patient_ids = np.random.randint(1000, 2000, size=n)
+    genders = np.random.choice(["M", "F"], size=n, p=[0.45, 0.55])
+    ages = np.random.randint(0, 90, size=n)
+    base = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+    scheduled_dates = [base - pd.to_timedelta(np.random.randint(2, 60), unit='d') for _ in range(n)]
+    days_until = np.random.poisson(lam=7, size=n)  # many short lead times
+    appointment_dates = [scheduled_dates[i] + pd.to_timedelta(days_until[i], unit='d') for i in range(n)]
+    appointment_weekday = [d.weekday() for d in appointment_dates]  # 0=Mon..6=Sun
+    appointment_hour = np.random.choice([9,10,11,13,14,15,16], size=n, p=[0.12,0.12,0.12,0.18,0.18,0.14,0.14])
+    sms_sent = np.random.choice([0,1], size=n, p=[0.25, 0.75])
+    num_prior = np.random.poisson(1.2, size=n)
+    distance_km = np.abs(np.random.normal(loc=5, scale=8, size=n))  # many close, some far
+    chronic = np.random.choice([0,1], size=n, p=[0.75,0.25])
+    insurance = np.random.choice(["Public","Private","None"], size=n, p=[0.5,0.4,0.1])
+    lead_source = np.random.choice(["Phone","Web","WalkIn"], size=n, p=[0.5,0.3,0.2])
+    # Simulate no-shows with some heuristics
+    # Base probability
+    p = 0.12 + 0.02*(appointment_weekday==4) + 0.05*(sms_sent==0) + 0.003*(ages>65).astype(float)
+    p = np.array(p, dtype=float)
+    # people with many prior no-shows (simulate) — make some high-risk
+    prior_no_show_rate = np.clip(np.random.beta(1,5,size=n), 0, 1)
+    p = p + 0.4*prior_no_show_rate - 0.05* (num_prior>3)
+    p = np.clip(p, 0.01, 0.95)
+    no_show = np.random.binomial(1, p)
+    df = pd.DataFrame({
+        "patient_id": patient_ids,
+        "gender": genders,
+        "age": ages,
+        "scheduled_date": scheduled_dates,
+        "appointment_date": appointment_dates,
+        "days_until_appointment": days_until,
+        "appointment_weekday": appointment_weekday,
+        "appointment_hour": appointment_hour,
+        "sms_reminder_sent": sms_sent,
+        "num_prior_appointments": num_prior,
+        "distance_km": distance_km.round(1),
+        "chronic_condition": chronic,
+        "insurance": insurance,
+        "lead_source": lead_source,
+        "previous_no_show_rate": prior_no_show_rate.round(2),
+        "no_show": no_show
+    })
+    return df
+
+df = make_sample_appointments(n=3000)
+
+# Create outputs folder
+os.makedirs("no_show_project/outputs", exist_ok=True)
+df.to_csv("no_show_project/outputs/appointments_raw_sample.csv", index=False)
+print("Sample data saved: no_show_project/outputs/appointments_raw_sample.csv")
+
+# 2) Quick EDA (print counts)
+print("\nNo-show rate:", df["no_show"].mean().round(3))
+
+# 3) Basic cleaning & feature creation
+df_clean = df.copy()
+# Convert appointment_weekday to categorical label
+weekday_map = {0:"Mon",1:"Tue",2:"Wed",3:"Thu",4:"Fri",5:"Sat",6:"Sun"}
+df_clean["appointment_weekday_name"] = df_clean["appointment_weekday"].map(weekday_map)
+# Time of day
+df_clean["time_of_day"] = pd.cut(df_clean["appointment_hour"], bins=[0,11,12,17,24], labels=["Morning","Midday","Afternoon","Evening"], right=False)
+# Flag long lead times
+df_clean["long_lead_flag"] = (df_clean["days_until_appointment"] > 21).astype(int)
+# Fill missing (if any)
+df_clean.fillna({"sms_reminder_sent":0}, inplace=True)
+
+# Save cleaned table for Power BI
+df_clean.to_csv("no_show_project/outputs/appointments_clean.csv", index=False)
+
+# 4) Prepare features & target
+features = ["age","gender","sms_reminder_sent","days_until_appointment","appointment_weekday_name","time_of_day","num_prior_appointments","distance_km","chronic_condition","insurance","lead_source","previous_no_show_rate","long_lead_flag"]
+target = "no_show"
+
+X = df_clean[features]
+y = df_clean[target]
+
+# 5) Preprocessing + Decision Tree pipeline
+cat_cols = ["gender","appointment_weekday_name","time_of_day","insurance","lead_source"]
+num_cols = [c for c in features if c not in cat_cols]
+
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+
+numeric_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+])
+
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore', sparse=False))
+])
+
+preprocessor = ColumnTransformer(transformers=[
+    ('num', numeric_transformer, num_cols),
+    ('cat', categorical_transformer, cat_cols)
+], remainder='drop')
+
+clf = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', DecisionTreeClassifier(max_depth=6, min_samples_leaf=20, random_state=42))
+])
+
+# 6) Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=42)
+clf.fit(X_train, y_train)
+
+# 7) Evaluation
+y_pred = clf.predict(X_test)
+y_proba = clf.predict_proba(X_test)[:,1]
+print("\nClassification report:\n", classification_report(y_test, y_pred, digits=3))
+print("ROC AUC:", roc_auc_score(y_test, y_proba).round(3))
+
+# Confusion matrix save
+cm = confusion_matrix(y_test, y_pred)
+cm_df = pd.DataFrame(cm, index=["Actual_Attend","Actual_NoShow"], columns=["Pred_Attend","Pred_NoShow"])
+cm_df.to_csv("no_show_project/outputs/confusion_matrix.csv")
+
+# 8) Save model
+joblib.dump(clf, "no_show_project/outputs/no_show_decision_tree.joblib")
+print("Model saved: no_show_project/outputs/no_show_decision_tree.joblib")
+
+# 9) Export test predictions for Power BI or reporting
+test_out = X_test.copy().reset_index(drop=True)
+test_out["true_no_show"] = y_test.reset_index(drop=True)
+test_out["pred_no_show"] = y_pred
+test_out["pred_proba_no_show"] = y_proba.round(3)
+test_out.to_csv("no_show_project/outputs/test_predictions.csv", index=False)
+print("Test predictions exported: no_show_project/outputs/test_predictions.csv")
+
+# 10) Optional: visualize tree and feature importances
+# Extract the trained DecisionTreeClassifier object after preprocessing
+# To visualize tree, we need feature names after preprocessing:
+# Get feature names from preprocessor (onehot)
+ohe = clf.named_steps['preprocessor'].named_transformers_['cat'].named_steps['onehot']
+cat_ohe_names = list(ohe.get_feature_names_out(cat_cols))
+feat_names = num_cols + cat_ohe_names
+
+tree = clf.named_steps['classifier']
+plt.figure(figsize=(14,8))
+plot_tree(tree, feature_names=feat_names, class_names=["Attend","NoShow"], filled=True, rounded=True, max_depth=3)
+plt.tight_layout()
+plt.savefig("no_show_project/outputs/decision_tree_top_levels.png", dpi=150)
+plt.close()
+print("Saved tree visualization: no_show_project/outputs/decision_tree_top_levels.png")
+
+# Feature importances (aggregate by original feature groups if needed)
+importances = tree.feature_importances_
+fi_df = pd.DataFrame({"feature": feat_names, "importance": importances}).sort_values("importance", ascending=False)
+fi_df.to_csv("no_show_project/outputs/feature_importances.csv", index=False)
+print("Saved feature importances: no_show_project/outputs/feature_importances.csv")
+
+# Quick ROC plot
+fpr, tpr, _ = roc_curve(y_test, y_proba)
+plt.figure()
+plt.plot(fpr,tpr, label=f'AUC={roc_auc_score(y_test,y_proba):.3f}')
+plt.plot([0,1],[0,1],'k--', alpha=0.6)
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve - No Show Classifier")
+plt.legend()
+plt.savefig("no_show_project/outputs/roc_curve.png", dpi=150)
+plt.close()
+print("Saved ROC curve: no_show_project/outputs/roc_curve.png")
+
+# Done
+print("\nAll outputs are in folder: no_show_project/outputs")
+
