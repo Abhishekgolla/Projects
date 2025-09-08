@@ -1,0 +1,13 @@
+review_id,movie_id,user_id,review_text,review_rating
+101,1,u1,"Stunning visuals and a heartfelt arc. Some pacing issues, but I loved the ending!",8
+102,1,u2,"Too long and occasionally dull; however, the space battles were thrilling.",6
+103,2,u3,"Sweet and cozy, though the plot felt predictable.",7
+104,2,u4,Chemistry was lacking. Not my cup of tea.,4
+105,3,u5,Tense and sharp with excellent set pieces.,8
+106,3,u6,Overly violent and loud without much substance.,5
+107,4,u7,Quietly powerful. Beautiful performances.,9
+108,4,u8,Slow burn that bored me to tears.,3
+109,5,u9,Silly fun for the family. Kids loved it.,7
+110,5,u10,Jokes fell flat. Easily forgettable.,4
+111,6,u11,"Moody, atmospheric, and satisfying mystery.",8
+112,6,u12,Dragged in the middle but the twist worked.,6
