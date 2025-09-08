@@ -1,0 +1,7 @@
+movie_id,title,year,genres,runtime_min,budget_usd,box_office_usd,imdb_rating
+1,Galactic Odyssey,2023,Sci-Fi|Adventure,139,120000000,450000000,7.4
+2,Love in Monsoon,2022,Romance|Drama,114,8000000,65000000,6.5
+3,Crimson Heist,2021,Action|Thriller,128,45000000,130000000,6.9
+4,Quiet Streets,2020,Drama,102,3000000,12000000,7.8
+5,Pumpkin Town,2019,Comedy|Family,98,15000000,40000000,6.2
+6,Echoes of Rain,2024,Mystery|Drama,121,22000000,90000000,7.1
