@@ -1,0 +1,21 @@
+order_id,order_date,customer_id,product_id,quantity,price,discount_pct,channel,payment_method,device,delivery_days,is_first_purchase,category,subcategory,supplier,country,state,is_premium,tenure_days,is_returned,predicted_return,return_risk_score
+1001,05-07-2024,C001,P100,2,499,10,Online,Credit Card,Mobile,3,Yes,Electronics,Mobile,ABC Corp,India,Karnataka,Yes,120,0,0,0.06338535
+1002,06-07-2024,C002,P101,1,999,0,Offline,Cash,Laptop,5,No,Fashion,Shoes,XYZ Ltd,India,Tamil Nadu,No,250,1,1,0.813683616
+1003,07-07-2024,C003,P102,3,299,5,Online,UPI,Tablet,4,Yes,Home,Kitchen,LMN Inc,India,Maharashtra,Yes,60,0,0,0.081542594
+1004,07-07-2024,C004,P103,1,1599,15,Online,Credit Card,Mobile,2,Yes,Electronics,Headphones,ABC Corp,India,Delhi,No,400,0,0,0.088558214
+1005,08-07-2024,C005,P104,2,799,20,Offline,Debit Card,Desktop,6,No,Fashion,Clothing,XYZ Ltd,India,Kerala,Yes,180,1,1,0.807420503
+1006,08-07-2024,C006,P105,1,450,0,Online,Wallet,Mobile,3,Yes,Home,Furniture,LMN Inc,India,UP,No,90,0,0,0.082695459
+1007,09-07-2024,C007,P106,5,120,0,Online,UPI,Mobile,4,No,Books,Novel,BookHouse,India,Delhi,Yes,30,0,0,0.14532663
+1008,09-07-2024,C008,P107,1,2500,25,Offline,Cash,Laptop,7,Yes,Electronics,Laptop,ABC Corp,India,Telangana,Yes,300,1,1,0.992388188
+1009,10-07-2024,C009,P108,2,699,5,Online,Credit Card,Mobile,2,Yes,Fashion,Bags,XYZ Ltd,India,Karnataka,No,200,0,0,0.049768562
+1010,11-07-2024,C010,P109,1,350,0,Online,Debit Card,Tablet,3,No,Home,Decor,LMN Inc,India,TN,Yes,150,0,0,0.051386784
+1011,12-07-2024,C011,P110,4,199,10,Offline,UPI,Mobile,5,Yes,Books,Comics,BookHouse,India,Delhi,No,45,0,0,0.114702916
+1012,12-07-2024,C012,P111,1,2200,30,Online,Credit Card,Mobile,6,Yes,Electronics,Smartwatch,ABC Corp,India,Kerala,Yes,220,1,1,0.96942915
+1013,13-07-2024,C013,P112,2,899,0,Online,UPI,Laptop,2,No,Fashion,Jeans,XYZ Ltd,India,UP,Yes,110,0,0,0.186671232
+1014,13-07-2024,C014,P113,1,1200,5,Offline,Cash,Mobile,4,Yes,Home,Furniture,LMN Inc,India,Maharashtra,No,330,0,0,0.087120548
+1015,14-07-2024,C015,P114,3,150,0,Online,Wallet,Tablet,3,Yes,Books,Novel,BookHouse,India,Delhi,Yes,60,1,1,0.689331885
+1016,14-07-2024,C016,P115,1,1700,15,Online,Debit Card,Desktop,2,No,Electronics,Headphones,ABC Corp,India,Karnataka,No,400,0,0,0.215793847
+1017,15-07-2024,C017,P116,2,599,20,Offline,UPI,Mobile,7,Yes,Fashion,Shoes,XYZ Ltd,India,TN,Yes,140,0,0,0.196268978
+1018,15-07-2024,C018,P117,1,2600,0,Online,Credit Card,Laptop,3,Yes,Electronics,Laptop,ABC Corp,India,Telangana,Yes,365,1,1,0.971327963
+1019,16-07-2024,C019,P118,4,299,10,Online,UPI,Mobile,5,Yes,Home,Kitchen,LMN Inc,India,Kerala,No,210,0,0,0.023785961
+1020,16-07-2024,C020,P119,1,499,0,Offline,Cash,Tablet,6,No,Fashion,Clothing,XYZ Ltd,India,Delhi,Yes,75,0,0,0.371092912
